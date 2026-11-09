@@ -1,16 +1,12 @@
-// Always mock firestore in every test
+// Always mock firebase in every test
 jest.mock("../config/firebaseConfig", () => ({
-    auth: {
-        verifyIdToken: jest.fn(),
-        getUser: jest.fn(),
-    },
     db: {
         collection: jest.fn(),
-        runTransaction: jest.fn(),
-        batch: jest.fn(),
+        doc: jest.fn(),
     },
 }));
 
+// Reset all mocks after each test
 afterEach(() => {
     jest.clearAllMocks();
 });
