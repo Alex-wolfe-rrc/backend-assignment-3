@@ -51,7 +51,7 @@ export const validateRequest = (
                 // abortEarly false means continue validation even if something fails validation
                 const { error, value: strippedFields } =
                     validationSchema.validate(requestData, {
-                        abortEarly: false,
+                        abortEarly: true,
                         stripUnknown: shouldStripFields,
                     });
 
@@ -59,7 +59,7 @@ export const validateRequest = (
                     errors.push(
                         ...error.details.map(
                             (detail) =>
-                                `${requestSectionName}: ${detail.message}`
+                                detail.message
                         )
                     );
                 } else if (shouldStripFields) {
@@ -100,7 +100,7 @@ export const validateRequest = (
             // If there are any validation erros, return them
             if (errors.length > 0) {
                 return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    error: `Validation error: ${errors.join(", ")}`,
+                    message: `Validation error: ${errors.join(", ")}`,
                 });
             }
 
