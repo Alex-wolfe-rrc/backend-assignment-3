@@ -1,15 +1,20 @@
-import { initializeApp, cert, ServiceAccount } from "firebase-admin/app";
-import { getFirestore, Firestore } from "firebase-admin/firestore";
 
-// You'll need to replace this with your actual service account file name
-import serviceAccount from "../fir-03-24-9-2025-firebase-adminsdk-fbsvc-7732f85e64.json";
+import { initializeApp, cert } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
-// initialize the Firebase app with our service account key
+const serviceAccountPath: string = path.resolve(
+    process.cwd(),
+    "serviceAccountKey.json"
+);
+
+const serviceAccount: object = JSON.parse(
+    fs.readFileSync(serviceAccountPath, "utf8")
+);
+
 initializeApp({
-    credential: cert(serviceAccount as ServiceAccount),
+    credential: cert(serviceAccount),
 });
 
-// get a reference to the firestore database
-const db: Firestore = getFirestore();
-
-export { db };
+export const db: FirebaseFirestore.Firestore = getFirestore();
