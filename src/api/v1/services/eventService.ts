@@ -20,6 +20,8 @@ type CreateEventInput = Pick<
     | "category"
 >;
 
+export class EventValidationError extends Error {}
+
 export const createEvent = async (
     eventData: CreateEventInput
 ): Promise<EventModel> => {
@@ -123,6 +125,12 @@ export const updateEvent = async (
             updatedAt: new Date().toISOString(),
         };
 
+        if (updatedEvent.registrationCount > updatedEvent.capacity) {
+            throw new EventValidationError(
+                '"registrationCount" must be less than or equal to ref:capacity'
+            );
+        }
+
         await updateDocument<EventModel>(
             COLLECTION_NAME,
             id,
@@ -131,6 +139,10 @@ export const updateEvent = async (
 
         return updatedEvent;
     } catch (error: unknown) {
+        if (error instanceof EventValidationError) {
+            throw error;
+        }
+        
         throw new Error("Failed to update event", {
             cause: error,
         });
