@@ -1,0 +1,172 @@
+
+import { EventModel } from "../models/eventModel";
+import {
+    createDocument,
+    getDocuments,
+    getDocumentById,
+    updateDocument,
+    deleteDocument,
+} from "../repositories/firestoreRepository";
+
+const COLLECTION_NAME: string = "events";
+
+type CreateEventInput = Pick<
+    EventModel,
+    | "name"
+    | "date"
+    | "capacity"
+    | "registrationCount"
+    | "status"
+    | "category"
+>;
+
+export class EventValidationError extends Error {}
+
+export const createEvent = async (
+    eventData: CreateEventInput
+): Promise<EventModel> => {
+    try {
+        const timestamp: string = new Date().toISOString();
+
+        const newEvent: Omit<EventModel, "id"> = {
+            ...eventData,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+        };
+
+        const id: string = await createDocument<EventModel>(
+            COLLECTION_NAME,
+            newEvent
+        );
+
+        return {
+            id,
+            ...newEvent,
+        };
+    } catch (error: unknown) {
+        throw new Error("Failed to create event", {
+            cause: error,
+        });
+    }
+};
+
+export const getAllEvents = async (): Promise<EventModel[]> => {
+    try {
+        const snapshot: FirebaseFirestore.QuerySnapshot =
+            await getDocuments(COLLECTION_NAME);
+
+        const events: EventModel[] = snapshot.docs.map(
+            (doc: FirebaseFirestore.QueryDocumentSnapshot): EventModel => ({
+                id: doc.id,
+                ...doc.data(),
+            } as EventModel)
+        );
+
+        return events;
+    } catch (error: unknown) {
+        throw new Error("Failed to retrieve events", {
+            cause: error,
+        });
+    }
+};
+
+
+export const getEventById = async (
+    id: string
+): Promise<EventModel | null> => {
+    try {
+        const snapshot: FirebaseFirestore.DocumentSnapshot | null =
+            await getDocumentById(COLLECTION_NAME, id);
+
+        if (!snapshot) {
+            return null;
+        }
+
+        return {
+            id: snapshot.id,
+            ...snapshot.data(),
+        } as EventModel;
+    } catch (error: unknown) {
+        throw new Error("Failed to retrieve event", {
+            cause: error,
+        });
+    }
+};
+
+
+type UpdateEventInput = Partial<
+    Pick<
+        EventModel,
+        | "name"
+        | "date"
+        | "capacity"
+        | "registrationCount"
+        | "status"
+        | "category"
+    >
+>;
+
+export const updateEvent = async (
+    id: string,
+    eventData: UpdateEventInput
+): Promise<EventModel | null> => {
+    try {
+        const existingEvent: EventModel | null =
+            await getEventById(id);
+
+        if (!existingEvent) {
+            return null;
+        }
+
+        const updatedEvent: EventModel = {
+            ...existingEvent,
+            ...eventData,
+            id,
+            updatedAt: new Date().toISOString(),
+        };
+
+        if (updatedEvent.registrationCount > updatedEvent.capacity) {
+            throw new EventValidationError(
+                '"registrationCount" must be less than or equal to ref:capacity'
+            );
+        }
+
+        await updateDocument<EventModel>(
+            COLLECTION_NAME,
+            id,
+            updatedEvent
+        );
+
+        return updatedEvent;
+    } catch (error: unknown) {
+        if (error instanceof EventValidationError) {
+            throw error;
+        }
+        
+        throw new Error("Failed to update event", {
+            cause: error,
+        });
+    }
+};
+
+
+export const deleteEvent = async (
+    id: string
+): Promise<boolean> => {
+    try {
+        const existingEvent: EventModel | null =
+            await getEventById(id);
+
+        if (!existingEvent) {
+            return false;
+        }
+
+        await deleteDocument(COLLECTION_NAME, id);
+
+        return true;
+    } catch (error: unknown) {
+        throw new Error("Failed to delete event", {
+            cause: error,
+        });
+    }
+};
