@@ -57,8 +57,8 @@ export const getAllEvents = async (): Promise<EventModel[]> => {
 
         const events: EventModel[] = snapshot.docs.map(
             (doc: FirebaseFirestore.QueryDocumentSnapshot): EventModel => ({
-                ...doc.data(),
                 id: doc.id,
+                ...doc.data(),
             } as EventModel)
         );
 
@@ -83,8 +83,8 @@ export const getEventById = async (
         }
 
         return {
-            ...snapshot.data(),
             id: snapshot.id,
+            ...snapshot.data(),
         } as EventModel;
     } catch (error: unknown) {
         throw new Error("Failed to retrieve event", {
